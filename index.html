@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Little Bookshop</title>
   <link rel="stylesheet" href="./styles.css" />
-  <!-- Optional: silence favicon 404 -->
+  <!-- Optional: blank favicon to remove 404 -->
   <link rel="icon" href="data:,">
 </head>
 <body>
@@ -20,7 +20,124 @@
 
   <main id="app"></main>
 
-  <!-- IMPORTANT -->
-  <script type="module" src="./app.js"></script>
+  <!-- Load Vue + Vue Router (global builds, no imports) -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
+  <script>
+    // --- Pages ---
+    const Home = {
+      data() {
+        return {
+          books: [
+            { id: 1, title: "Velora Isle", author: "M. Williams", price: "R249", img: "https://picsum.photos/seed/book1/300/420", blurb: "A private island, forbidden secrets, and a love that changes everything." },
+            { id: 2, title: "A Kingdom of Fire & Fate", author: "H. Renee", price: "R299", img: "https://picsum.photos/seed/book2/300/420", blurb: "A fallen prince and a fierce heroine in a slow-burn war of hearts." },
+            { id: 3, title: "Hooked", author: "E. McIntire", price: "R279", img: "https://picsum.photos/seed/book3/300/420", blurb: "Dangerous obsessions and a romance that refuses to behave." },
+            { id: 4, title: "Priest", author: "S. Simone", price: "R269", img: "https://picsum.photos/seed/book4/300/420", blurb: "Temptation, devotion, and a boundary-pushing love story." }
+          ]
+        };
+      },
+      template: `
+        <section class="page">
+          <h2 class="section-title">Featured Books</h2>
+          <div class="book-grid">
+            <article v-for="b in books" :key="b.id" class="book-card">
+              <a :href="'#/book/' + b.id" class="book-cover">
+                <img :src="b.img" :alt="b.title + ' cover'" loading="lazy">
+              </a>
+              <div class="book-meta">
+                <h3 class="book-title"><a :href="'#/book/' + b.id">{{ b.title }}</a></h3>
+                <p class="book-author">{{ b.author }}</p>
+                <p class="book-price">{{ b.price }}</p>
+                <a :href="'#/book/' + b.id" class="btn">View details</a>
+              </div>
+            </article>
+          </div>
+        </section>
+      `
+    };
+
+    const About = {
+      template: `
+        <section class="page">
+          <h2>About Us</h2>
+          <p>A tiny shop with a big love for stories.</p>
+        </section>
+      `
+    };
+
+    const Contact = {
+      template: `
+        <section class="page">
+          <h2>Contact</h2>
+          <p>Email us at hello@littlebookshop.example</p>
+        </section>
+      `
+    };
+
+    const Book = {
+      data() { return { book: null }; },
+      created() {
+        const id = Number(this.$route.params.id);
+        this.book = this.findBook(id);
+      },
+      watch: {
+        '$route.params.id'(next) {
+          this.book = this.findBook(Number(next));
+        }
+      },
+      methods: {
+        findBook(id) {
+          const books = [
+            { id: 1, title: "Velora Isle", author: "M. Williams", price: "R249", img: "https://picsum.photos/seed/book1/600/840", blurb: "A private island, forbidden secrets, and a love that changes everything." },
+            { id: 2, title: "A Kingdom of Fire & Fate", author: "H. Renee", price: "R299", img: "https://picsum.photos/seed/book2/600/840", blurb: "A fallen prince and a fierce heroine in a slow-burn war of hearts." },
+            { id: 3, title: "Hooked", author: "E. McIntire", price: "R279", img: "https://picsum.photos/seed/book3/600/840", blurb: "Dangerous obsessions and a romance that refuses to behave." },
+            { id: 4, title: "Priest", author: "S. Simone", price: "R269", img: "https://picsum.photos/seed/book4/600/840", blurb: "Temptation, devotion, and a boundary-pushing love story." }
+          ];
+          return books.find(b => b.id === id) || null;
+        }
+      },
+      template: `
+        <section class="page" v-if="book">
+          <p><a href="#/">← Back to books</a></p>
+          <div class="book-detail">
+            <div class="detail-cover">
+              <img :src="book.img" :alt="book.title + ' cover'">
+            </div>
+            <div class="detail-meta">
+              <h2 class="detail-title">{{ book.title }}</h2>
+              <p class="detail-author">by {{ book.author }}</p>
+              <p class="detail-price">{{ book.price }}</p>
+              <p class="detail-blurb">{{ book.blurb }}</p>
+              <div class="detail-actions">
+                <a href="#/contact" class="btn">Enquire</a>
+                <a href="#/" class="btn btn-outline">Keep browsing</a>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section v-else class="page">
+          <h2>Book not found</h2>
+          <p>Try going back to the <a href="#/">book list</a>.</p>
+        </section>
+      `
+    };
+
+    // --- Router setup ---
+    const { createRouter, createWebHashHistory } = VueRouter;
+    const router = createRouter({
+      history: createWebHashHistory(),
+      routes: [
+        { path: "/", component: Home },
+        { path: "/about", component: About },
+        { path: "/contact", component: Contact },
+        { path: "/book/:id", component: Book },
+        { path: "/:pathMatch(.*)*", redirect: "/" }
+      ]
+    });
+
+    // --- App mount ---
+    const App = { template: `<router-view></router-view>` };
+    Vue.createApp(App).use(router).mount("#app");
+  </script>
 </body>
 </html>
