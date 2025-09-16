@@ -6,7 +6,7 @@ import About from "./about.js";
 import Contact from "./contact.js";
 
 export default createRouter({
-  history: createWebHashHistory(), // works on GitHub Pages
+  history: createWebHashHistory(),
   routes: [
     { path: "/", component: Home },
     { path: "/about", component: About },
