@@ -9,7 +9,10 @@
 </head>
 <body>
   <header class="site-header">
-    <h1>Little Bookshop</h1>
+    <div class="brand">
+      <span class="logo-dot" aria-hidden="true"></span>
+      <h1>Little Bookshop</h1>
+    </div>
     <nav class="nav">
       <a href="#/">Home</a>
       <a href="#/about">About</a>
@@ -19,13 +22,15 @@
 
   <main id="app"></main>
 
+  <!-- Vue (global) -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
   <script>
-    // --- Pages ---
+    // --- Home page with search ---
     const Home = {
       data() {
         return {
+          searchQuery: "",
           books: [
             { id: 1, title: "Velora Isle", author: "M. Williams", price: "R249", img: "https://picsum.photos/seed/book1/300/420", blurb: "A private island, forbidden secrets, and a love that changes everything." },
             { id: 2, title: "A Kingdom of Fire & Fate", author: "H. Renee", price: "R299", img: "https://picsum.photos/seed/book2/300/420", blurb: "A fallen prince and a fierce heroine in a slow-burn war of hearts." },
@@ -34,28 +39,63 @@
           ]
         };
       },
+      computed: {
+        filteredBooks() {
+          const q = this.searchQuery.trim().toLowerCase();
+          if (!q) return this.books;
+          return this.books.filter(b =>
+            b.title.toLowerCase().includes(q) ||
+            b.author.toLowerCase().includes(q)
+          );
+        }
+      },
       template: `
         <section class="page">
-          <div class="intro">
+          <div class="intro card">
             <h2>Welcome to the Little Bookshop</h2>
-            <p>Discover your next favourite story in our carefully curated collection of contemporary and romance titles.</p>
+            <p>Discover your next favourite story in our curated collection of contemporary and romance titles.</p>
+            <div class="search-bar">
+              <input
+                v-model="searchQuery"
+                type="search"
+                class="input"
+                placeholder="Search by title or author…"
+                aria-label="Search books"
+              />
+              <span class="kbd">/</span>
+            </div>
           </div>
+
           <h2 class="section-title">Featured Books</h2>
           <div class="book-grid">
-            <article v-for="b in books" :key="b.id" class="book-card">
-              <a :href="'#/book/' + b.id" class="book-cover">
+            <article v-for="b in filteredBooks" :key="b.id" class="book-card card">
+              <a :href="'#/book/' + b.id" class="book-cover" :aria-label="'View ' + b.title">
                 <img :src="b.img" :alt="b.title + ' cover'" loading="lazy">
               </a>
               <div class="book-meta">
-                <h3 class="book-title"><a :href="'#/book/' + b.id">{{ b.title }}</a></h3>
+                <h3 class="book-title">
+                  <a :href="'#/book/' + b.id">{{ b.title }}</a>
+                </h3>
                 <p class="book-author">{{ b.author }}</p>
                 <p class="book-price">{{ b.price }}</p>
-                <a :href="'#/book/' + b.id" class="btn">View details</a>
+                <a :href="'#/book/' + b.id" class="btn btn-accent">View details</a>
               </div>
             </article>
           </div>
+
+          <p v-if="filteredBooks.length === 0" class="muted">No books match your search.</p>
         </section>
-      `
+      `,
+      mounted() {
+        // Keyboard shortcut: focus search with "/"
+        window.addEventListener('keydown', (e) => {
+          if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+            e.preventDefault();
+            const el = document.querySelector('.search-bar .input');
+            el && el.focus();
+          }
+        });
+      }
     };
 
     const About = {
@@ -100,9 +140,9 @@
       },
       template: `
         <section class="page" v-if="book">
-          <p><a href="#/">← Back to books</a></p>
+          <p><a href="#/" class="link">← Back to books</a></p>
           <div class="book-detail">
-            <div class="detail-cover">
+            <div class="detail-cover card">
               <img :src="book.img" :alt="book.title + ' cover'">
             </div>
             <div class="detail-meta">
@@ -111,20 +151,20 @@
               <p class="detail-price">{{ book.price }}</p>
               <p class="detail-blurb">{{ book.blurb }}</p>
               <div class="detail-actions">
-                <a href="#/contact" class="btn">Enquire</a>
-                <a href="#/" class="btn btn-outline">Keep browsing</a>
+                <a href="#/contact" class="btn btn-accent">Enquire</a>
+                <a href="#/" class="btn btn-ghost">Keep browsing</a>
               </div>
             </div>
           </div>
         </section>
         <section v-else class="page">
           <h2>Book not found</h2>
-          <p>Try going back to the <a href="#/">book list</a>.</p>
+          <p>Try going back to the <a href="#/" class="link">book list</a>.</p>
         </section>
       `
     };
 
-    // --- Router setup ---
+    // Router
     const { createRouter, createWebHashHistory } = VueRouter;
     const router = createRouter({
       history: createWebHashHistory(),
@@ -137,8 +177,70 @@
       ]
     });
 
-    // --- App mount ---
-    const App = { template: `<router-view></router-view>` };
+    // Root App with newsletter modal
+    const App = {
+      data() {
+        return {
+          showNewsletter: false,
+          email: "",
+          signedUp: false,
+        };
+      },
+      template: `
+        <div>
+          <router-view></router-view>
+
+          <!-- Newsletter Modal -->
+          <div
+            v-if="showNewsletter"
+            class="modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nl-title"
+          >
+            <div class="modal card">
+              <button class="modal-close" @click="dismiss" aria-label="Close">×</button>
+              <h3 id="nl-title" class="modal-title">Join our newsletter</h3>
+              <p class="modal-text" v-if="!signedUp">
+                Get new releases, staff picks, and exclusive offers—straight to your inbox.
+              </p>
+
+              <form v-if="!signedUp" class="modal-form" @submit.prevent="signup">
+                <input
+                  v-model="email"
+                  class="input"
+                  type="email"
+                  placeholder="Your email address"
+                  required
+                  aria-label="Email address"
+                />
+                <button class="btn btn-accent" type="submit">Subscribe</button>
+              </form>
+
+              <p v-else class="modal-text"><strong>Thank you!</strong> You’re on the list 💜</p>
+            </div>
+          </div>
+        </div>
+      `,
+      mounted() {
+        // Show after a short delay unless dismissed before
+        if (!localStorage.getItem('newsletterDismissed')) {
+          setTimeout(() => { this.showNewsletter = true; }, 1400);
+        }
+      },
+      methods: {
+        dismiss() {
+          this.showNewsletter = false;
+          localStorage.setItem('newsletterDismissed', '1');
+        },
+        signup() {
+          this.signedUp = true;
+          localStorage.setItem('newsletterDismissed', '1');
+          // In a real app, you'd POST the email to your newsletter service here.
+        }
+      }
+    };
+
     Vue.createApp(App).use(router).mount("#app");
   </script>
 </body>
