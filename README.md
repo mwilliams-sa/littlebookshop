@@ -63,7 +63,7 @@ Solution: Used localStorage to remember dismissal or sign-up.
 
 **Accessibility & Semantic HTML**
 
-Used semantic elements (<header>, <nav>, <main>, <section>, <h1>–<h3>, <p>).
+Used semantic elements 
 All interactive elements (<a>, <button>, <input>, <form>) include accessible labels.
 Provided alt text for all book cover images.
 Added ARIA roles/labels to the newsletter modal (role="dialog", aria-modal="true", aria-labelledby).
